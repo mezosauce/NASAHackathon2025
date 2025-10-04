@@ -30,6 +30,7 @@ SLEEP_BETWEEN = 0.2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ingest")
+logging.disable(logging.CRITICAL)
 
 def sanitize_filename(s: str) -> str:
     """Convert a title into a filesystem-safe string"""
@@ -50,36 +51,34 @@ def fetch_html(url: str) -> str:
 def extract_sections_from_html(html: str) -> dict:
     """Extract semantic sections from PMC article HTML"""
     soup = BeautifulSoup(html, "html.parser")
+
     sections = {}
 
-    # Extract Abstract
-    abstract_tag = soup.find("div", {"class": "abstract"})
-    if abstract_tag:
-        sections["abstract"] = abstract_tag.get_text(" ", strip=True)
+    # Find all section titles
+    for title_tag in soup.find_all(class_="pmc_sec_title"):
+        #section_title = title_tag.get_text(strip=True)
+        section_title = ''.join(title_tag.stripped_strings)
+        section_text_parts = []
 
-    # Extract Results, Methods, Discussion, Conclusion based on h2/h3 headings
-    for heading in soup.find_all(["h2", "h3"]):
-        key = heading.get_text(" ", strip=True).lower()
-        content_parts = []
-        for sib in heading.find_next_siblings():
-            if sib.name in ["h2", "h3"]:
+        # Collect all sibling paragraphs until next section
+        for sibling in title_tag.find_next_siblings():
+            # Stop when the next section starts
+            if "pmc_sec_title" in sibling.get("class", []):
                 break
-            text = sib.get_text(" ", strip=True) if hasattr(sib, "get_text") else str(sib).strip()
-            if text:
-                content_parts.append(text)
-        if content_parts:
-            if "result" in key:
-                sections["results"] = " ".join(content_parts)
-            elif "method" in key or "material" in key:
-                sections["methods"] = " ".join(content_parts)
-            elif "discussion" in key:
-                sections["discussion"] = " ".join(content_parts)
-            elif "conclusion" in key:
-                sections["conclusion"] = " ".join(content_parts)
+            # Collect text
+            section_text_parts.append(sibling.get_text(" ", strip=True))
+
+        section_text = "\n".join(section_text_parts).strip()
+        if section_title and section_text:
+            sections[section_title] = section_text
+            print(section_title)
+
+    return sections
 
     # Fallback: full text if no sections found
-    if not sections:
-        sections["full_text"] = soup.get_text(" ", strip=True)
+    #if not sections:
+    if True:
+        sections["Article content"] = soup.get_text(" ", strip=True)
 
     return sections
 
@@ -94,6 +93,7 @@ def process_article(title: str, link: str) -> dict:
         "error": None
     }
 
+    
     try:
         html = fetch_html(link)
         sections = extract_sections_from_html(html)
@@ -101,6 +101,7 @@ def process_article(title: str, link: str) -> dict:
     except Exception as e:
         out["error"] = str(e)
         logger.error("Error processing %s: %s", link, e)
+
 
     # Save JSON
     json_path = RAW_DIR / f"{pub_id}.json"
@@ -133,4 +134,4 @@ if __name__ == "__main__":
         raise SystemExit(1)
     csv_path = sys.argv[1]
     process_csv(csv_path)"""
-    process_csv(r'C:\Users\19372\Documents\GitHub\NASAHackathon2025\backend\data\SB_publication_PMC.csv')
+    process_csv(r'C:\Users\muhaa\Documents\GitHub\NASAHackathon2025\backend\data\SB_publication_PMC.csv')
