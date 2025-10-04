@@ -1,0 +1,11 @@
+# CSV reading & JSON handling
+ujson==5.8.0
+
+# HTTP requests for downloading HTML/PDF
+requests==2.31.0
+
+# HTML parsing
+beautifulsoup4==4.12.2
+
+# Progress bars
+tqdm==4.66.1
