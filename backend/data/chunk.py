@@ -25,7 +25,6 @@ TARGET_WORDS = 250   # words per chunk
 OVERLAP_WORDS = 50   # overlap between consecutive chunks
 MAX_FILENAME_LEN = 100  # max characters for the JSON filename to avoid Windows path errors
 
-
 def chunk_text(text: str, target_words=TARGET_WORDS, overlap=OVERLAP_WORDS):
     """
     Split text into overlapping chunks.
@@ -45,7 +44,6 @@ def chunk_text(text: str, target_words=TARGET_WORDS, overlap=OVERLAP_WORDS):
         start = end - overlap  # maintain overlap
     return chunks
 
-
 def prioritized_sections(sections: dict):
     """
     Return sections in order of priority:
@@ -59,7 +57,6 @@ def prioritized_sections(sections: dict):
             ordered.append((k, v))
     return ordered
 
-
 def sanitize_chunk_filename(pub_id: str, section: str, idx: int, max_length=MAX_FILENAME_LEN) -> str:
     """
     Build a safe filename for a chunk JSON.
@@ -69,7 +66,6 @@ def sanitize_chunk_filename(pub_id: str, section: str, idx: int, max_length=MAX_
     if len(base) > max_length:
         base = base[:max_length]
     return f"{base}.json"
-
 
 def process_article(json_file: Path):
     article = json.load(open(json_file, "r", encoding="utf-8"))
@@ -91,7 +87,6 @@ def process_article(json_file: Path):
                 open(chunk_file, "w", encoding="utf-8"),
             )
 
-
 def main():
     json_files = list(RAW_DIR.glob("*.json"))
     if not json_files:
@@ -102,7 +97,6 @@ def main():
         process_article(jf)
 
     print(f"Chunking complete. Chunks saved in: {CHUNKS_DIR.resolve()}")
-
 
 if __name__ == "__main__":
     main()
