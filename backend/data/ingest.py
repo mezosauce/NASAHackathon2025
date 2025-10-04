@@ -30,7 +30,6 @@ SLEEP_BETWEEN = 0.2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ingest")
-logging.disable(logging.CRITICAL)
 
 def sanitize_filename(s: str) -> str:
     """Convert a title into a filesystem-safe string"""
@@ -52,6 +51,8 @@ def extract_sections_from_html(html: str) -> dict:
     """Extract semantic sections from PMC article HTML"""
     soup = BeautifulSoup(html, "html.parser")
 
+    
+
     sections = {}
 
     # Find all section titles
@@ -71,8 +72,13 @@ def extract_sections_from_html(html: str) -> dict:
         section_text = "\n".join(section_text_parts).strip()
         if section_title and section_text:
             sections[section_title] = section_text
-            print(section_title)
 
+    meta_tag = soup.find("meta", attrs={"name": "citation_pmid"})
+    
+    if meta_tag and meta_tag.get("content"):
+        pmid = meta_tag.get("content")              #This is the pmid
+     
+        
     return sections
 
     # Fallback: full text if no sections found
