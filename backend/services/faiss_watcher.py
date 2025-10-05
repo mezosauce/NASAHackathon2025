@@ -14,7 +14,7 @@ class IndexChangeHandler(FileSystemEventHandler):
             print(f"Detected change in {event.src_path}, reloading FAISS index...")
             load_index_and_model()
 
-def start_watcher():
+def start_watcher(): 
     event_handler = IndexChangeHandler()
     observer = Observer()
     observer.schedule(event_handler, path=str(INDEX_DIR), recursive=False)

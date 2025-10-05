@@ -42,4 +42,5 @@ def query_faiss(question: str, top_k: int):
 
     return results
 
-load_index_and_model()
+if __name__ == "__main__":
+    load_index_and_model()
