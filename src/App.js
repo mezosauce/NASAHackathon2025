@@ -1,40 +1,75 @@
-﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Search, FileText, TrendingUp, Users, Rocket, Moon, BookOpen, BarChart3, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis } from 'recharts';
 import Axios from 'axios';
 // Mock data structure - in production, this would come from NASA repository
-const generatePublications = () => {
-    const BASE_URL = 'http://LOCALHOST:80/api/'; // Placeholder URL
-    const topics = set();
-    const organisms = set();
-    const missions = set();
-    const years = Array.from({ length: 25 }, (_, i) => 2000 + i);
 
-    const publications = Axios.get(`${BASE_URL}/articles`).then(res => res.data);
+const generatePublications = async () => {
+  const BASE_URL = 'http://localhost:80/api'; // Corrected URL (removed trailing slash)
 
-    return Array.from(publications
+  try {
+    const res = await Axios.get(`${BASE_URL}/articles`);
+    const articles = res.data;
 
-    return Array.from({ length: 608 }, (_, i) => ({
-        id: i + 1,
-        title: `Impact of ${topics[Math.floor(Math.random() * topics.length)]} on ${organisms[Math.floor(Math.random() * organisms.length)]} in Space Environment`,
-        authors: `Author ${i + 1} et al.`,
-        year: years[Math.floor(Math.random() * years.length)],
-        topic: topics[Math.floor(Math.random() * topics.length)],
-        organism: organisms[Math.floor(Math.random() * organisms.length)],
-        mission: missions[Math.floor(Math.random() * missions.length)],
-        citations: Math.floor(Math.random() * 150),
-        keyFindings: [
-            'Significant changes observed in cellular response',
-            'Novel adaptation mechanisms identified',
-            'Potential countermeasures proposed'
+    // Optional: Extract unique values for filtering/tagging
+    const topics = new Set();
+    const organisms = new Set();
+    const missions = new Set();
+    const years = new Set();
+
+    // Assume each article has relevant fields
+    const publications = articles.map((article, index) => {
+      // You can adjust the fallback logic based on real structure
+      topics.add(article.topic || 'Unknown Topic');
+      organisms.add(article.organism || 'Unknown Organism');
+      missions.add(article.mission || 'Unknown Mission');
+      years.add(article.year || 'Unknown Year');
+
+      return {
+        id: index + 1,
+        title: article.title || 'Untitled Article',
+        authors: article.authors || 'Unknown Authors',
+        year: article.year || 'Unknown Year',
+        topic: article.topic || 'Unknown Topic',
+        organism: article.organism || 'Unknown Organism',
+        mission: article.mission || 'Unknown Mission',
+        citations: article.citations ?? Math.floor(Math.random() * 150),
+        keyFindings: article.abstract|| [
+          'Significant changes observed in cellular response',
+          'Novel adaptation mechanisms identified',
+          'Potential countermeasures proposed',
         ],
-        researchGap: Math.random() > 0.7,
-        actionable: Math.random() > 0.5
-    }));
+        researchGap: article.researchGap ?? Math.random() > 0.7,
+        actionable: article.actionable ?? Math.random() > 0.5,
+      };
+    });
+
+    return {
+      publications,
+      filters: {
+        topics: Array.from(topics),
+        organisms: Array.from(organisms),
+        missions: Array.from(missions),
+        years: Array.from(years),
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching publications:', error);
+    return { publications: [], filters: {} };
+  }
 };
 
+
 const NASABioscienceDashboard = () => {
-    const [publications] = useState(generatePublications());
+    const [publications, setPublications] = useState([]);
+    useEffect(() => {
+    const loadData = async () => {
+        const data = await generatePublications();
+        setPublications(data.publications); // Store in state
+    };
+    
+    loadData();
+    }, []);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTopic, setSelectedTopic] = useState('All');
     const [selectedOrganism, setSelectedOrganism] = useState('All');
