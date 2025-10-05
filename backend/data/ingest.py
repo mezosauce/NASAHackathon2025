@@ -10,6 +10,7 @@ ingest.py - Ingest NCBI PMC articles via HTML extraction
 
 import csv
 import time
+import re
 import logging
 from pathlib import Path
 import requests
@@ -31,6 +32,20 @@ SLEEP_BETWEEN = 0.2
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ingest")
 
+articleJSON = {
+    "id": None,
+    "title": None,
+    "link": None,
+    "authors": None,
+    "year": None,
+    "topic": None,
+    "sections": None,
+    "OSD": None,
+    "error": None
+}
+
+
+
 def sanitize_filename(s: str) -> str:
     """Convert a title into a filesystem-safe string"""
     return "".join(c if c.isalnum() or c in "-_." else "_" for c in s)[:100]
@@ -47,15 +62,32 @@ def fetch_html(url: str) -> str:
             time.sleep(1 + attempt * 2)
     raise RuntimeError(f"Failed to fetch {url}")
 
-def extract_sections_from_html(html: str) -> dict:
+def extract_info_from_html(html: str):
     """Extract semantic sections from PMC article HTML"""
     soup = BeautifulSoup(html, "html.parser")
 
-    
+    # Find the pmid
+    meta_tag = soup.find("meta", attrs={"name": "citation_pmid"})
+    if meta_tag and meta_tag.get("content"):
+        articleJSON["id"] = meta_tag.get("content")
+
+    # Find the authors
+    authors = []
+    authors_html = soup.find_all("meta", attrs={"name": "citation_author"})
+    for meta_tag in authors_html:
+        if meta_tag and meta_tag.get("content"):
+            authors.append(meta_tag.get("content"))
+    articleJSON["authors"] = authors
+
+    # Find the year
+           
+    meta_tag = soup.find("meta", attrs={"name": "citation_publication_date"})
+    if meta_tag and meta_tag.get("content"):
+        articleJSON["year"] = meta_tag.get("content")       #Actually stores publication date as a string
 
     sections = {}
-
-    # Find all section titles
+    OSD_list = []
+    # Find all section titles (and OIDs mentioned in article)
     for title_tag in soup.find_all(class_="pmc_sec_title"):
         #section_title = title_tag.get_text(strip=True)
         section_title = ''.join(title_tag.stripped_strings)
@@ -68,53 +100,42 @@ def extract_sections_from_html(html: str) -> dict:
                 break
             # Collect text
             section_text_parts.append(sibling.get_text(" ", strip=True))
-
+            
         section_text = "\n".join(section_text_parts).strip()
         if section_title and section_text:
             sections[section_title] = section_text
+            OSD_list.extend(re.findall(r'OSD-\d+', section_text))
 
-    meta_tag = soup.find("meta", attrs={"name": "citation_pmid"})
-    
-    if meta_tag and meta_tag.get("content"):
-        pmid = meta_tag.get("content")              #This is the pmid
-     
-        
-    return sections
+    OSD_list = list(set(OSD_list))      #remove duplicates
+    if(OSD_list):        
+        print(OSD_list)
 
-    # Fallback: full text if no sections found
-    #if not sections:
-    if True:
-        sections["Article content"] = soup.get_text(" ", strip=True)
+    articleJSON["sections"] = sections
 
-    return sections
+def process_article(title: str, link: str):         # "Process a single article"
 
-def process_article(title: str, link: str) -> dict:
-    """Process a single article"""
-    pub_id = sanitize_filename(title)
-    out = {
-        "id": pub_id,
-        "title": title,
-        "link": link,
-        "sections": None,
-        "error": None
-    }
+    for key in articleJSON:         #clear global JSON dictionary
+        articleJSON[key] = None
 
+    articleJSON["title"] = title
+    articleJSON["link"] = link
+
+    file_name = sanitize_filename(title)
     
     try:
         html = fetch_html(link)
-        sections = extract_sections_from_html(html)
-        out["sections"] = sections
+        extract_info_from_html(html)
+  
+
     except Exception as e:
-        out["error"] = str(e)
+        articleJSON["error"] = str(e)
         logger.error("Error processing %s: %s", link, e)
 
-
     # Save JSON
-    json_path = RAW_DIR / f"{pub_id}.json"
+    json_path = RAW_DIR / f"{file_name}.json"
     with open(json_path, "w", encoding="utf-8") as jf:
-        json.dump(out, jf)
+        json.dump(articleJSON, jf)
     #print(f"Saved article JSON to: {json_path.resolve()}")
-    return out
 
 def process_csv(csv_path: str):
     """Read CSV and process all articles"""
