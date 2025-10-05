@@ -38,7 +38,7 @@ articleJSON = {
     "link": None,
     "authors": None,
     "year": None,
-    "topic": None,
+    "abstract": None,
     "sections": None,
     "OSD": None,
     "error": None
@@ -71,6 +71,11 @@ def extract_info_from_html(html: str):
     if meta_tag and meta_tag.get("content"):
         articleJSON["id"] = meta_tag.get("content")
 
+    # Find the abstract
+    meta_tag = soup.find("meta", attrs={"name": "description"})
+    if meta_tag and meta_tag.get("content"):
+        articleJSON["abstract"] = meta_tag.get("content")
+
     # Find the authors
     authors = []
     authors_html = soup.find_all("meta", attrs={"name": "citation_author"})
@@ -88,7 +93,7 @@ def extract_info_from_html(html: str):
     sections = {}
     OSD_list = []
     # Find all section titles (and OIDs mentioned in article)
-    for title_tag in soup.find_all(class_="pmc_sec_title"):
+    for title_tag in soup.find_all(class_=["pmc_sec_title", "abstract"]):
         #section_title = title_tag.get_text(strip=True)
         section_title = ''.join(title_tag.stripped_strings)
         section_text_parts = []
@@ -107,8 +112,8 @@ def extract_info_from_html(html: str):
             OSD_list.extend(re.findall(r'OSD-\d+', section_text))
 
     OSD_list = list(set(OSD_list))      #remove duplicates
-    if(OSD_list):        
-        print(OSD_list)
+    # if(OSD_list):        
+    #     print(OSD_list)
 
     articleJSON["sections"] = sections
 
@@ -120,18 +125,18 @@ def process_article(title: str, link: str):         # "Process a single article"
     articleJSON["title"] = title
     articleJSON["link"] = link
 
-    file_name = sanitize_filename(title)
+    #file_name = sanitize_filename(title)
     
     try:
         html = fetch_html(link)
         extract_info_from_html(html)
-  
 
     except Exception as e:
         articleJSON["error"] = str(e)
         logger.error("Error processing %s: %s", link, e)
 
     # Save JSON
+    file_name = articleJSON["id"]
     json_path = RAW_DIR / f"{file_name}.json"
     with open(json_path, "w", encoding="utf-8") as jf:
         json.dump(articleJSON, jf)

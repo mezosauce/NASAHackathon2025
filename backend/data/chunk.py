@@ -25,6 +25,8 @@ TARGET_WORDS = 250   # words per chunk
 OVERLAP_WORDS = 50   # overlap between consecutive chunks
 MAX_FILENAME_LEN = 100  # max characters for the JSON filename to avoid Windows path errors
 
+file_enum = 0
+
 def chunk_text(text: str, target_words=TARGET_WORDS, overlap=OVERLAP_WORDS):
     """
     Split text into overlapping chunks.
@@ -68,6 +70,8 @@ def sanitize_chunk_filename(pub_id: str, section: str, idx: int, max_length=MAX_
     return f"{base}.json"
 
 def process_article(json_file: Path):
+    global file_enum
+    
     article = json.load(open(json_file, "r", encoding="utf-8"))
     pub_id = article["id"]
     sections = article.get("sections", {})
@@ -76,6 +80,8 @@ def process_article(json_file: Path):
         chunks = chunk_text(sec_text)
         for idx, c in enumerate(chunks):
             chunk_filename = sanitize_chunk_filename(pub_id, sec_name, idx)
+            chunk_filename = f"{file_enum}.json"
+            file_enum = file_enum + 1
             chunk_file = CHUNKS_DIR / chunk_filename
             json.dump(
                 {
