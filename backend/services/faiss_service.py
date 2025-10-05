@@ -32,15 +32,14 @@ def query_faiss(question: str, top_k: int):
     for score, idx in zip(D[0], I[0]):
         meta = metadata[idx]
         results.append({
-            "chunk_id": meta["chunk_id"],
-            "publication_id": meta["publication_id"],
-            "section": meta["section"],
-            "link": meta["link"],
-            "text_preview": meta["text_preview"],
-            "score": float(score)
+            "chunk_id": str(meta.get("chunk_index", idx)),  # use chunk_index or FAISS idx
+            "publication_id": meta.get("publication_id", ""),
+            "section": meta.get("section", ""),
+            "link": meta.get("link", ""),  # will be empty since not in metadata
+            "text_preview": meta.get("text_preview", ""),
+            "score": float(score),
         })
+
     return results
 
-# Load at module import
-if __name__ == "__main__":
-    load_index_and_model()
+load_index_and_model()

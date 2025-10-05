@@ -1,6 +1,6 @@
 # app.py
 from fastapi import FastAPI
-from routers import ask, health
+from routers import ask, health, reload_faiss
 import uvicorn
 
 app = FastAPI(title="NASA Hackathon RAG API", version="1.0")

@@ -1,6 +1,6 @@
-from ollama import Ollama
+from ollama import Client
 
-ollama_client = Ollama()
+ollama_client = Client()
 
 def ask_ollama(prompt: str, model_name: str = "deepseek-r1:8b"):
     response = ollama_client.chat(
