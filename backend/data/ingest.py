@@ -166,4 +166,4 @@ if __name__ == "__main__":
         raise SystemExit(1)
     csv_path = sys.argv[1]
     process_csv(csv_path)"""
-    process_csv(r'C:\Users\muhaa\Documents\GitHub\NASAHackathon2025\backend\data\SB_publication_PMC.csv')
+    process_csv(r'/Users/tylerhumfleet/Documents/GitHub/NASAHackathon2025/backend/data/SB_publication_PMC.csv')
