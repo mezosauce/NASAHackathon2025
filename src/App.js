@@ -499,10 +499,10 @@ const NASABioscienceDashboard = () => {
                                                     <div>
                                                         <h4 className="text-white font-semibold mb-2">{selectedPublication.title}</h4>
                                                         <p className="text-slate-400 text-sm">{selectedPublication.authors}</p>
-                                                        <p>{selectedPublication.publication_id}</p>
+                                                        <p>{selectedPublication.id}</p>
                                                                                                                     
                                                             {/* View Source Link */}
-                                                            {true && (
+                                                            {selectedPublication.id && (
                                                                 <a
                                                                 href={`https://pubmed.ncbi.nlm.nih.gov/${selectedPublication.id}/`}
                                                                 target="_blank"
