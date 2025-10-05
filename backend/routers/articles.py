@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from supabase import create_client, Client 
 from dotenv import load_dotenv
 import os 
@@ -35,3 +35,8 @@ def get_articles(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le
         "total_pages": (count + page_size - 1) // page_size,
     }
 
+@router.get("/{article_id}")
+def get_article(article_id: int):
+    response = supabase.table("articles").select("*").eq("id", article_id).execute()
+
+    return response
