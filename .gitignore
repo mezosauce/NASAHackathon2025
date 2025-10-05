@@ -35,3 +35,4 @@ Thumbs.db
 /backend/services/__pycache__
 backend/db/.env
 /backend/db/__pycache__
+/backend/data/__pycache__
