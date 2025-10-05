@@ -36,11 +36,15 @@ const generatePublications = async () => {
         organism: article.organism || 'Unknown Organism',
         mission: article.mission || 'Unknown Mission',
         citations: article.citations ?? Math.floor(Math.random() * 150),
-        keyFindings: article.abstract|| [
-          'Significant changes observed in cellular response',
-          'Novel adaptation mechanisms identified',
-          'Potential countermeasures proposed',
-        ],
+        keyFindings: Array.isArray(article.abstract) 
+        ? article.abstract 
+        : article.abstract 
+        ? [article.abstract] // wrap single string in array
+    : [
+        'Significant changes observed in cellular response',
+        'Novel adaptation mechanisms identified',
+        'Potential countermeasures proposed',
+      ],
         researchGap: article.researchGap ?? Math.random() > 0.7,
         actionable: article.actionable ?? Math.random() > 0.5,
       };
@@ -455,7 +459,8 @@ const NASABioscienceDashboard = () => {
                                             <div
                                                 key={pub.id}
                                                 
-                                                onClick={() => window.open(`https://pubmed.ncbi.nlm.nih.gov/${pub.id}/`, '_blank')}
+                                                onClick={() => setSelectedPublication(pub)}
+                                                //onClick={() => window.open(`https://pubmed.ncbi.nlm.nih.gov/${pub.id}/`, '_blank')}
                                                 className="bg-slate-800 bg-opacity-50 backdrop-blur-md rounded-lg p-4 border border-slate-700 hover:border-blue-500 transition-all cursor-pointer"
                                             >
                                                 <div className="flex justify-between items-start mb-2">
@@ -494,6 +499,20 @@ const NASABioscienceDashboard = () => {
                                                     <div>
                                                         <h4 className="text-white font-semibold mb-2">{selectedPublication.title}</h4>
                                                         <p className="text-slate-400 text-sm">{selectedPublication.authors}</p>
+                                                        <p>{selectedPublication.publication_id}</p>
+                                                                                                                    
+                                                            {/* View Source Link */}
+                                                            {true && (
+                                                                <a
+                                                                href={`https://pubmed.ncbi.nlm.nih.gov/${selectedPublication.id}/`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block"
+                                                                >
+                                                                View Source
+                                                                </a>
+                                                            )}
+
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div className="bg-slate-900 p-3 rounded">
@@ -528,6 +547,8 @@ const NASABioscienceDashboard = () => {
                                                             </p>
                                                         </div>
                                                         )}
+                                                        
+                                                        
                                                 </div>
                                             </>
                                         ) : (
