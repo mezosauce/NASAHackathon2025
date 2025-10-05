@@ -78,6 +78,7 @@ def build_faiss_index(chunks):
 
     metadata = [
         {
+            "chunk_id": f"{c['publication_id']}_{c['section']}_{c['chunk_index']}",
             "publication_id": c["publication_id"],
             "section": c["section"],
             "chunk_index": c["chunk_index"],
