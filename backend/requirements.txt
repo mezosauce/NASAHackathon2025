@@ -16,7 +16,6 @@ tqdm>=4.65.0
 
 # Sentence embeddings
 sentence-transformers>=2.2.2
-torch>=2.1.0
 
 # Vector search
 faiss-cpu>=1.7.4
