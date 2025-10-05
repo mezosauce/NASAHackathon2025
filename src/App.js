@@ -2,18 +2,20 @@
 import { Search, FileText, TrendingUp, Users, Rocket, Moon, BookOpen, BarChart3, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis } from 'recharts';
 import Axios from 'axios';
+
+// Define BASE_URL as a constant at the top of the file
+const BASE_URL = 'http://localhost:8000/api';
+
 // Mock data structure - in production, this would come from NASA repository
 
 const generatePublications = async () => {
-  const BASE_URL = 'http://localhost:8000/api'; // Corrected URL (removed trailing slash)
-
   try {
-    const res = await Axios.get(`${BASE_URL}/articles`);
+    const res = await Axios.get(`${BASE_URL}/articles?page_size=600`);
     const articles = res.data.articles || [];
 
     // Optional: Extract unique values for filtering/tagging
     const topics = new Set();
-    const organisms = new Set();
+    const organisms = new Set()
     const missions = new Set();
     const years = new Set();
 
@@ -26,7 +28,7 @@ const generatePublications = async () => {
       years.add(article.year || 'Unknown Year');
 
       return {
-        id: index + 1,
+        id: article.id || index + 1,
         title: article.title || 'Untitled Article',
         authors: article.authors || 'Unknown Authors',
         year: article.year || 'Unknown Year',
@@ -59,60 +61,68 @@ const generatePublications = async () => {
   }
 };
 
-const QueryResults = ({ results, onBack }) => {
-    if (results.error) {
-        return (
-            <div className="p-8 text-red-500">
-                <h2 className="text-2xl font-bold mb-4">Error</h2>
-                <p>{results.error}</p>
-                <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Back</button>
-            </div>
-        );
-    }
-    if (results.message) {
-        return (
-            <div className="p-8 text-green-500">
-                <h2 className="text-2xl font-bold mb-4">Message</h2>
-                <p>{results.message}</p>
-                <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Back</button>
-            </div>
-        );
-    }
-    if (!results.articles || results.articles.length === 0) {
-        return (
-            <div className="p-8 text-slate-400">
-                <h2 className="text-2xl font-bold mb-4">No Articles Found</h2>
-                <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Back</button>
-            </div>
-        );
-    }
-    return (
-        <div className="p-8">
-            <h2 className="text-2xl font-bold mb-6">Query Results</h2>
-            <button onClick={onBack} className="mb-6 px-4 py-2 bg-blue-600 text-white rounded">Back</button>
-            <div className="grid gap-6">
-                {results.articles.map((article, idx) => (
-                    <div key={idx} className="bg-slate-800 rounded-lg p-6 border border-slate-700 text-white">
-                        {Object.entries(article).map(([key, value]) => (
-                            <div key={key} className="mb-2">
-                                <span className="font-semibold">{key}:</span> <span>{Array.isArray(value) ? value.join(', ') : String(value)}</span>
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
 
+function extractContent(answerString) {
+  // Match content=' ... ' (handling escaped quotes inside)
+
+  const match = answerString.match(/content='([^']*)'/);
+  return match ? match[1] : "";
+}
+
+
+ function QueryResults({ publications, insights, filters }) {
+  if (!publications || publications.length === 0) {
+    return <p className="text-center text-gray-500">No results found.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Insights Section */}
+      {insights && insights.answer && (
+        <div className="p-6 bg-gradient-to-r from-blue-900 to-slate-800 shadow-lg rounded-lg border border-blue-500">
+          <h3 className="text-lg font-bold text-white mb-2">AI Response</h3>
+    <p className="text-slate-200">
+  {extractContent(insights.answer)}
+</p>
+        </div>
+      )}
+
+      {/* Results Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {publications.map((pub, index) => (
+          <div
+            key={pub.chunk_id || index}
+            className="hover:shadow-md transition-shadow p-4 border border-slate-600 rounded-lg bg-slate-800"
+          >
+            <h4 className="text-base font-semibold text-white mb-2 line-clamp-2">
+              {pub.section || 'Research Finding'}
+            </h4>
+            <div className="space-y-2 text-sm">
+              <p className="text-slate-300">{pub.text_preview}</p>
+              <p className="text-slate-400"><strong>Publication ID:</strong> {pub.publication_id}</p>
+              <p className="text-slate-400"><strong>Relevance Score:</strong> {(pub.score * 100).toFixed(1)}%</p>
+              {pub.link && (
+                <a href={pub.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                  View Source
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 const NASABioscienceDashboard = () => {
     const [publications, setPublications] = useState([]);
+    const [filters, setFilters] = useState({});
     const [queryResults, setQueryResults] = useState(null);
     const [view, setView] = useState('dashboard'); // 'dashboard' or 'results'
     useEffect(() => {
     const loadData = async () => {
         const data = await generatePublications();
         setPublications(data.publications); // Store in state
+        setFilters(data.filters || {}); // Store filters in state
     };
     
     loadData();
@@ -124,7 +134,7 @@ const NASABioscienceDashboard = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [selectedPublication, setSelectedPublication] = useState(null);
     const [amountQuery, setAmountQuery] = useState(10);
-    // Extract unique values for filters
+        // Extract unique values for filters
     const topics = ['All', ...new Set(publications.map(p => p.topic))];
     const organisms = ['All', ...new Set(publications.map(p => p.organism))];
 
@@ -233,7 +243,7 @@ const NASABioscienceDashboard = () => {
                                         // Send over Query Search and Query Amount to Backend
                                         console.log('Searching for:', searchQuery, 'Amount:', amountQuery);
                                         try {
-                                            const response = await Axios.post(
+                                           /* const response = await Axios.post(
                                                 `http://127.0.0.1:8000/api/ask`,
                                                 {
                                                     'question': searchQuery,
@@ -252,7 +262,57 @@ const NASABioscienceDashboard = () => {
                                             } else if (response.data.articles) {
                                                 setQueryResults(response.data);
                                                 setView('results');
-                                            }
+                                            } */ 
+                                            // Mock response for testing without backend
+                                            
+                                            
+                                            const mockResponse =   {
+                                                "answer": "model='llama3.1:8b' created_at='2025-10-05T10:46:21.3031586Z' done=True done_reason='stop' total_duration=31253903500 load_duration=6070861800 prompt_eval_count=497 prompt_eval_duration=20969751600 eval_count=39 eval_duration=4208138500 message=Message(role='assistant', content='It appears that there is no question about \"micers\" in the provided context. Could you please provide a clear and specific question related to the text, so I can assist you properly?', thinking=None, images=None, tool_name=None, tool_calls=None)",
+                                                "context": [
+                                                    {
+                                                    "chunk_id": "0",
+                                                    "publication_id": "33979621",
+                                                    "section": "Grip test",
+                                                    "link": "https://pubmed.ncbi.nlm.nih.gov/33979621/",
+                                                    "text_preview": "Mice were inverted on a cross-hatched metal platform and the time required for mice to release themselves from the platform was quantified. Three repetition measurements were recorded per mouse, giving the mouse 1hr rest in between measurements.",
+                                                    "score": 0.46044468879699707
+                                                    },
+                                                    {
+                                                    "chunk_id": "0",
+                                                    "publication_id": "36362993",
+                                                    "section": "2. Materials and Methods",
+                                                    "link": "https://pubmed.ncbi.nlm.nih.gov/36362993/",
+                                                    "text_preview": "2.1. Animals and Strains In this study, a subset of the socially housed (2 per cage) sixteen-week-old female wild type C57BL/6NJ and MCAT transgenic mice was utilized as described in [ 20 ] and [ 48 ]. Wild type (WT) and MCAT mice were generated at NASA Ames Research Center (ARC) by crossing male MCAT mice, B6. Cg-Tg (CAG-OTC/CAT) 4033 Prab/J with female C57BL/6NJ mice (from Jackson Laboratory, Ba",
+                                                    "score": 0.4547635018825531
+                                                    },
+                                                    {
+                                                    "chunk_id": "17",
+                                                    "publication_id": "30154332",
+                                                    "section": "AbstractAstronauts are reported to have experienced some impairment in visual acuity during their mission on the International Space Station (ISS) and after they returned to Earth. There is emerging evidence that changes in vision may involve alterations in ocular structure and function. To investigate possible mechanisms, changes in protein expression profiles and oxidative stress-associated apoptosis were examined in mouse ocular tissue after spaceflight. Nine-week-old male C57BL/6 mice (n= 12) were launched from the Kennedy Space Center on a SpaceX rocket to the ISS for a 35-day mission. The animals were housed in the mouse Habitat Cage Unit (HCU) in the Japan Aerospace Exploration Agency (JAXA) “Kibo” facility on the ISS. The flight mice lived either under an ambient microgravity condition (µg) or in a centrifugal habitat unit that produced 1gartificial gravity (µg + 1g). Habitat control (HC) and vivarium control mice lived on Earth in HCUs or normal vivarium cages, respectively. Quantitative assessment of ocular tissue demonstrated that the µg group induced significant apoptosis in the retina vascular endothelial cells compared to all other groups (p< 0.05) that was 64% greater than that in the HC group. Proteomic analysis showed that many key pathways responsible for cell death, cell repair, inflammation, and metabolic stress were significantly altered in µg mice compared to HC animals. Additionally, there were more significant changes in regulated protein expression in the µg group relative to that in the µg + 1ggroup. These data provide evidence that spaceflight induces retinal apoptosis of vascular endothelial cells and changes in retinal protein expression related to cellular structure, immune response and metabolic function, and that artificial gravity (AG) provides some protection against these changes. These retinal cellular responses may affect blood–retinal barrier (BRB) integrity, visual acuity, and impact the potential risk of developing late retinal degeneration.Keywords:spaceflight, ocular tissue, microgravity, artificial gravity, apoptosis, proteomics, oxidative stress",
+                                                    "link": "https://pubmed.ncbi.nlm.nih.gov/30154332/",
+                                                    "text_preview": "of their stay on the ISS. The flight mice were then returned live to Earth and splashed down in the Pacific Ocean on 26 August 2016. It took approximately 40 h for the mice to be recovered in the Pacific Ocean, brought to shore and transported to the testing and processing laboratory located in San Diego, California on 28 August 2016. The spaceflight mice were then euthanized and their eyes were r",
+                                                    "score": 0.45248478651046753
+                                                    },
+                                                    {
+                                                    "chunk_id": "0",
+                                                    "publication_id": "36362993",
+                                                    "section": "2.1. Animals and Strains",
+                                                    "link": "https://pubmed.ncbi.nlm.nih.gov/36362993/",
+                                                    "text_preview": "In this study, a subset of the socially housed (2 per cage) sixteen-week-old female wild type C57BL/6NJ and MCAT transgenic mice was utilized as described in [ 20 ] and [ 48 ]. Wild type (WT) and MCAT mice were generated at NASA Ames Research Center (ARC) by crossing male MCAT mice, B6. Cg-Tg (CAG-OTC/CAT) 4033 Prab/J with female C57BL/6NJ mice (from Jackson Laboratory, Bar Harbor, ME, USA). Genot",
+                                                    "score": 0.45235687494277954
+                                                    },
+                                                    {
+                                                    "chunk_id": "1",
+                                                    "publication_id": "25133741",
+                                                    "section": "Animals",
+                                                    "link": "https://pubmed.ncbi.nlm.nih.gov/25133741/",
+                                                    "text_preview": "exposure in space [14] , [15] . These considerations underscored the necessity for the use of specific pathogen-free mice in the experiments, a side benefit of this approach being the reduced variability of data obtained in SPF-animals [16] . Male C57BL/6N mice (n = 300) weighing 22–25 g were purchased from the Animal Breeding Facility - Branch of Shemyakin & Ovchinnikov Institute of Bioorganic Ch",
+                                                    "score": 0.45180174708366394
+                                                    }
+                                                ]
+                                                };
+                                            setQueryResults(mockResponse);
+                                            setView('results');
                                         } catch (error) {
                                             setQueryResults({ error: error.message });
                                             setView('results');
@@ -439,10 +499,11 @@ const NASABioscienceDashboard = () => {
                                     </div>
 
                                     <div className="space-y-3 max-h-[800px] overflow-y-auto pr-2">
-                                        {filteredPublications.slice(0, 50).map(pub => (
+                                        {filteredPublications.map(pub => (
                                             <div
                                                 key={pub.id}
-                                                onClick={() => setSelectedPublication(pub)}
+                                                
+                                                onClick={() => window.open(`https://pubmed.ncbi.nlm.nih.gov/${pub.id}/`, '_blank')}
                                                 className="bg-slate-800 bg-opacity-50 backdrop-blur-md rounded-lg p-4 border border-slate-700 hover:border-blue-500 transition-all cursor-pointer"
                                             >
                                                 <div className="flex justify-between items-start mb-2">
@@ -508,11 +569,13 @@ const NASABioscienceDashboard = () => {
                                                         </ul>
                                                     </div>
                                                     {selectedPublication.researchGap && (
-                                                        <div className="p-3 bg-orange-900 bg-opacity-30 rounded border-l-4 border-orange-500">
-                                                            <p className="text-orange-300 text-sm font-medium">⚠️ Research Gap Identified</p>
-                                                            <p className="text-slate-300 text-xs mt-1">Additional studies recommended</p>
+                                                        <div className="p-3 bg-orange-900 bg-opacity-30 rounded-lg border-l-4 border-orange-500">
+                                                            <p className="text-white font-medium">Research Gap Identified</p>
+                                                            <p className="text-slate-300 text-sm">
+                                                            Further investigation recommended in this area.
+                                                            </p>
                                                         </div>
-                                                    )}
+                                                        )}
                                                 </div>
                                             </>
                                         ) : (
@@ -528,10 +591,19 @@ const NASABioscienceDashboard = () => {
                     </main>
                 </>
             ) : (
-                <QueryResults
-                    results={queryResults}
-                    onBack={() => setView('dashboard')}
-                />
+                <div className="p-6 text-white">
+                    <button
+                        onClick={() => setView('dashboard')}
+                        className="mb-4 px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-all"
+                    >
+                        ← Back to Dashboard
+                    </button>
+                    <QueryResults
+                        publications={queryResults?.context || []}
+                        insights={queryResults}
+                        filters={filters}
+                    />
+                </div>
             )}
         </div>
     );

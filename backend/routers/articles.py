@@ -13,7 +13,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 router = APIRouter(prefix="/api/articles", tags=["System"])
 
 @router.get("/")
-def get_articles(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
+def get_articles(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=1000)):
     start = (page - 1) * page_size
     end = start + page_size - 1  # inclusive
 
