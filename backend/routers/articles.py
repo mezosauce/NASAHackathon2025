@@ -5,27 +5,24 @@ router = APIRouter(prefix="/api/articles", tags=["System"])
 
 @router.get("/")
 def get_articles(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
-    """
-    Fetch articles with pagination.
-    - page: which page of results (1-based)
-    - page_size: number of items per page (max 100)
-    """
     start = (page - 1) * page_size
-    end = start + page_size - 1  # Supabase range is inclusive
+    end = start + page_size - 1  # inclusive
 
     response = (
-        supabase.table("articles")
-        .select("*")
-        .range(start, end)
-        .execute()
+    supabase.table("articles")
+    .select("*", count="exact")
+    .range(start, end)
+    .execute()
     )
 
-    if response.error:
-        return {"error": str(response.error)}
+    data = response.data if hasattr(response, "data") else response["data"]
+    count = response.count if hasattr(response, "count") else response["count"]
 
     return {
         "page": page,
         "page_size": page_size,
-        "articles": response.data,
-        "total": len(response.data),  # optional, for current page count
+        "articles": data,
+        "total_count": count,
+        "total_pages": (count + page_size - 1) // page_size,
     }
+

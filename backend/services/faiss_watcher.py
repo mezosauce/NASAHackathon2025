@@ -2,7 +2,7 @@
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from backend.services.faiss_service import load_index_and_model
+from services.faiss_service import load_index_and_model
 from pathlib import Path
 import time
 

@@ -16,14 +16,21 @@ INDEX_DIR = Path("data/index")
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 
 # Load embedding model
+print("Loading embedding model")
 model = SentenceTransformer(EMBED_MODEL_NAME)
+print("Model loaded")
 
 # Load FAISS index
+print("Loading FAISS index")
 index = faiss.read_index(str(INDEX_DIR / "faiss.index"))
+print("FAISS index loaded")
 
 # Load metadata mapping
 with open(INDEX_DIR / "index_to_chunk.json", "r", encoding="utf-8") as fh:
     metadata = json.load(fh)
+
+print(f"Loaded metadata for {len(metadata)} chunks")
+
 
 def retrieve_top_k(query: str, k=5):
     """
@@ -47,7 +54,7 @@ def retrieve_top_k(query: str, k=5):
 
 if __name__ == "__main__":
     query = input("Enter your query: ")
-    top_chunks = retrieve_top_k(query, k=5)
+    top_chunks = retrieve_top_k(query, k=10)
     for i, c in enumerate(top_chunks, 1):
         print(f"\n--- Chunk {i} (score: {c['score']:.4f}) ---")
         print(f"Publication ID: {c['publication_id']}")
