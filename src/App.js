@@ -1,13 +1,18 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { Search, FileText, TrendingUp, Users, Rocket, Moon, BookOpen, BarChart3, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis } from 'recharts';
-
+import Axios from 'axios';
 // Mock data structure - in production, this would come from NASA repository
-const generateMockPublications = () => {
-    const topics = ['Microgravity Effects', 'Radiation Biology', 'Plant Growth', 'Human Physiology', 'Cellular Biology', 'Bone Density', 'Muscle Atrophy', 'Immune System', 'Cardiovascular', 'Neuroscience'];
-    const organisms = ['Human', 'Mouse', 'Arabidopsis', 'C. elegans', 'Yeast', 'Bacteria', 'Fruit Fly'];
-    const missions = ['ISS', 'Space Shuttle', 'Skylab', 'Biosatellite', 'Artemis', 'Mars Simulation'];
+const generatePublications = () => {
+    const BASE_URL = 'http://LOCALHOST:80/api/'; // Placeholder URL
+    const topics = set();
+    const organisms = set();
+    const missions = set();
     const years = Array.from({ length: 25 }, (_, i) => 2000 + i);
+
+    const publications = Axios.get(`${BASE_URL}/articles`).then(res => res.data);
+
+    return Array.from(publications
 
     return Array.from({ length: 608 }, (_, i) => ({
         id: i + 1,
@@ -29,7 +34,7 @@ const generateMockPublications = () => {
 };
 
 const NASABioscienceDashboard = () => {
-    const [publications] = useState(generateMockPublications());
+    const [publications] = useState(generatePublications());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTopic, setSelectedTopic] = useState('All');
     const [selectedOrganism, setSelectedOrganism] = useState('All');
