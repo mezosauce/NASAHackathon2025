@@ -14,6 +14,7 @@ Each chunk JSON contains:
 
 import ujson as json
 from pathlib import Path
+from tqdm import tqdm
 
 # Directories
 RAW_DIR = Path("data/raw")
@@ -75,6 +76,7 @@ def process_article(json_file: Path):
     article = json.load(open(json_file, "r", encoding="utf-8"))
     pub_id = article["id"]
     sections = article.get("sections", {})
+    link = article.get("link", "")
 
     for sec_name, sec_text in prioritized_sections(sections):
         chunks = chunk_text(sec_text)
@@ -89,6 +91,7 @@ def process_article(json_file: Path):
                     "section": sec_name,
                     "publication_id": pub_id,
                     "chunk_index": idx,
+                    "link": link,
                 },
                 open(chunk_file, "w", encoding="utf-8"),
             )
@@ -99,7 +102,7 @@ def main():
         print("No raw JSON files found in", RAW_DIR)
         return
 
-    for jf in json_files:
+    for jf in tqdm(json_files, desc='Chunking:'):
         process_article(jf)
 
     print(f"Chunking complete. Chunks saved in: {CHUNKS_DIR.resolve()}")

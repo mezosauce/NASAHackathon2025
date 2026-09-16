@@ -167,3 +167,4 @@ if __name__ == "__main__":
     csv_path = sys.argv[1]
     process_csv(csv_path)"""
     process_csv(Path("backend/data/SB_publication_PMC.csv"))
+    print(f"Ingest complete. Raw JSON saved in: {RAW_DIR.resolve()}")

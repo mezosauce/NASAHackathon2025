@@ -59,4 +59,5 @@ if __name__ == "__main__":
         print(f"\n--- Chunk {i} (score: {c['score']:.4f}) ---")
         print(f"Publication ID: {c['publication_id']}")
         print(f"Section: {c['section']}")
+        #print(f"Link: {c['link']}")
         print(c["text_preview"])
